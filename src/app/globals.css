@@ -3,11 +3,23 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  --primary: #e53e3e;
+  --primary-dark: #c53030;
+  --secondary: #2d3748;
+  --accent: #ed8936;
+  --success: #48bb78;
+  --info: #4299e1;
+  --warning: #ecc94b;
+  --danger: #f56565;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-primary: var(--primary);
+  --color-primary-dark: var(--primary-dark);
+  --color-secondary: var(--secondary);
+  --color-accent: var(--accent);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
@@ -16,11 +28,115 @@
   :root {
     --background: #0a0a0a;
     --foreground: #ededed;
+    --primary: #f56565;
+    --primary-dark: #e53e3e;
+    --secondary: #4a5568;
   }
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+}
+
+/* Fitness-themed utility classes */
+.gym-gradient {
+  background: linear-gradient(to right, var(--primary), var(--primary-dark));
+}
+
+.gym-card {
+  background-color: white;
+  border-radius: 0.75rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
+    0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  transition: box-shadow 0.3s;
+  overflow: hidden;
+  border-top-width: 4px;
+  border-top-color: #ef4444;
+  border-top-style: solid;
+}
+
+.gym-card:hover {
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
+    0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+.gym-heading {
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.gym-button-primary {
+  display: inline-block;
+  padding: 0.75rem 1.5rem;
+  background-color: #e53e3e;
+  color: white;
+  border-radius: 0.5rem;
+  font-weight: 500;
+  transition: all 0.3s;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
+    0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.gym-button-primary:hover {
+  background-color: #c53030;
+  transform: scale(1.05);
+}
+
+.gym-button-secondary {
+  display: inline-block;
+  padding: 0.75rem 1.5rem;
+  background-color: #1a202c;
+  color: white;
+  border-radius: 0.5rem;
+  font-weight: 500;
+  transition: all 0.3s;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
+    0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.gym-button-secondary:hover {
+  background-color: #2d3748;
+  transform: scale(1.05);
+}
+
+.gym-section {
+  padding-top: 4rem;
+  padding-bottom: 4rem;
+  padding-left: 1.5rem;
+  padding-right: 1.5rem;
+}
+
+/* Animated elements */
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+.animate-pulse-slow {
+  animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--primary);
+  border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--primary-dark);
 }

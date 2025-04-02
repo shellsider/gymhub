@@ -3,25 +3,25 @@
 import { useState, useEffect } from "react";
 import ReactMarkdown from "react-markdown";
 
-export default function SupplimentResultWindow({ loading, supplementPlan }) {
-  const [processedPlan, setProcessedPlan] = useState("");
+export default function NutritionResultWindow({ loading, result }) {
+  const [processedResult, setProcessedResult] = useState("");
   const [isRendering, setIsRendering] = useState(false);
 
   useEffect(() => {
-    if (supplementPlan) {
+    if (result) {
       setIsRendering(true);
 
       // Process markdown asynchronously
       const timer = setTimeout(() => {
-        setProcessedPlan(supplementPlan);
+        setProcessedResult(result);
         setIsRendering(false);
       }, 300);
 
       return () => clearTimeout(timer);
     } else {
-      setProcessedPlan("");
+      setProcessedResult("");
     }
-  }, [supplementPlan]);
+  }, [result]);
 
   return (
     <section className="relative w-full p-8 bg-white rounded-xl shadow-lg min-h-[300px] border-t-4 border-red-600">
@@ -30,18 +30,16 @@ export default function SupplimentResultWindow({ loading, supplementPlan }) {
           <div className="flex flex-col items-center">
             <div className="w-14 h-14 border-4 border-red-200 border-t-red-600 rounded-full animate-spin mb-4" />
             <p className="text-red-600 font-medium">
-              {loading
-                ? "Creating your supplement plan..."
-                : "Formatting your plan..."}
+              {loading ? "Analyzing your meals..." : "Formatting results..."}
             </p>
           </div>
         </div>
       )}
 
-      {processedPlan ? (
+      {processedResult ? (
         <div className="prose prose-red max-w-none overflow-auto">
           <h3 className="text-2xl font-bold text-gray-800 mb-6 pb-4 border-b border-gray-100">
-            Your Personalized Supplement Plan
+            Your Nutrition Analysis
           </h3>
           <div className="overflow-x-auto max-w-full">
             <ReactMarkdown
@@ -118,29 +116,8 @@ export default function SupplimentResultWindow({ loading, supplementPlan }) {
                   />
                 ),
               }}>
-              {processedPlan}
+              {processedResult}
             </ReactMarkdown>
-          </div>
-
-          <div className="mt-8 pt-6 border-t border-gray-100 flex justify-center">
-            <button
-              onClick={() => window.print()}
-              className="inline-flex items-center justify-center px-6 py-3 bg-gray-800 text-white rounded-lg hover:bg-gray-900 transition-colors text-sm font-medium">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-5 w-5 mr-2"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor">
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"
-                />
-              </svg>
-              Print Supplement Plan
-            </button>
           </div>
         </div>
       ) : (
@@ -157,12 +134,12 @@ export default function SupplimentResultWindow({ loading, supplementPlan }) {
                 strokeLinecap="round"
                 strokeLinejoin="round"
                 strokeWidth={2}
-                d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"
+                d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"
               />
             </svg>
             <p className="text-gray-500 text-lg max-w-md">
-              Fill out the form and click "Get Supplement Suggestions" to
-              receive personalized recommendations.
+              Enter your meals and servings then click "Calculate Nutrition" to
+              see your nutrition analysis.
             </p>
           </div>
         )
