@@ -95,7 +95,7 @@ const featuresData = [
     title: "Chatbot Support",
     description:
       "Get instant answers to fitness queries with our AI-powered chatbot. Ask about exercise techniques, nutrition advice, or recovery strategies 24/7.",
-    link: "/list/#",
+    link: "/list/chatbot",
     icon: (
       <svg
         xmlns="http://www.w3.org/2000/svg"
