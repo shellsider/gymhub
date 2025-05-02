@@ -6,6 +6,12 @@ import ReactMarkdown from "react-markdown";
 export default function PlanResult({ loading, plan }) {
   const [processedPlan, setProcessedPlan] = useState("");
   const [isRendering, setIsRendering] = useState(false);
+  const [isClient, setIsClient] = useState(false);
+
+  // Set isClient to true when component mounts
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   useEffect(() => {
     if (plan) {
@@ -23,6 +29,18 @@ export default function PlanResult({ loading, plan }) {
       setProcessedPlan("");
     }
   }, [plan]);
+
+  // Don't render anything on server
+  if (!isClient) {
+    return (
+      <section className="relative w-full p-8 bg-white rounded-xl shadow-lg min-h-[300px] border-t-4 border-red-600">
+        <div className="flex flex-col items-center justify-center h-full text-center py-10">
+          <div className="w-14 h-14 border-4 border-red-200 border-t-red-600 rounded-full animate-spin mb-4" />
+          <p className="text-red-600 font-medium">Loading...</p>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className="relative w-full p-8 bg-white rounded-xl shadow-lg min-h-[300px] border-t-4 border-red-600">
@@ -63,7 +81,7 @@ export default function PlanResult({ loading, plan }) {
                   ),
                   h3: ({ node, ...props }) => (
                     <h3
-                      className="text-lg font-semibold text-gray-800 mt-4 mb-2 break-words"
+                      className="text-lg font-semibold text-red-600 mt-4 mb-2 break-words"
                       {...props}
                     />
                   ),
@@ -125,6 +143,19 @@ export default function PlanResult({ loading, plan }) {
                       className="border-l-4 border-red-300 pl-4 italic text-gray-700 my-4"
                       {...props}
                     />
+                  ),
+                  a: ({ node, href, children, ...props }) => (
+                    <a
+                      href={href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-red-600 hover:underline"
+                      {...props}>
+                      {children}
+                    </a>
+                  ),
+                  em: ({ node, ...props }) => (
+                    <em className="text-gray-500 text-sm" {...props} />
                   ),
                 }}>
                 {processedPlan}

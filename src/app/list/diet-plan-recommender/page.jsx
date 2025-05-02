@@ -17,25 +17,13 @@ export default function DietPlanRecommender() {
     setPlan("");
 
     try {
-      // Build prompt with new fields
-      const prompt = `Create a diet plan for a ${data.age}-year-old ${
-        data.dietPreference
-      } individual who is ${data.height} cm tall, weighs ${
-        data.weight
-      } kg, and wants to reach ${data.targetWeight} kg in ${
-        data.duration
-      } weeks. 
-They have a goal to ${
-        data.goal === "lose" ? "lose weight" : "gain weight"
-      }, with an activity level of ${data.activityLevel}, drinking ${
-        data.waterIntake
-      } liters of water daily, allergies to ${
-        data.allergies || "none"
-      }, and prefer ${data.mealFrequency} meals per day. 
-Include daily calorie intake, hydration tips, and nutrient recommendations. Format response with headings, bullet points, and line breaks.`;
+      // Call the new API endpoint that includes dish images
+      const response = await axios.post("/api/diet-with-images", {
+        formData: data,
+      });
 
-      const response = await axios.post("/api/gemini", { prompt });
-      setPlan(response.data.data || "No response from Gemini");
+      // The enhanced diet plan with images is in response.data.data
+      setPlan(response.data.data || "No response from AI.");
     } catch (error) {
       console.error("Error:", error);
       setPlan("An error occurred while fetching the diet plan.");

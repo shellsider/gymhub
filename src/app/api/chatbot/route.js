@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import axios from "axios";
 
 const genAI = new GoogleGenerativeAI('AIzaSyBCns8R8uqCoXfaD4ejT7ClWc9qDOFQ0jo');
 
@@ -12,6 +13,28 @@ const genAI = new GoogleGenerativeAI('AIzaSyBCns8R8uqCoXfaD4ejT7ClWc9qDOFQ0jo');
 export async function POST(req) {
     try {
         const { message, history = [] } = await req.json();
+
+        // Check if this is a workout plan request
+        if (isWorkoutRequest(message)) {
+            // Calls a special endpoint for workout plans with YouTube videos
+            const workoutResponse = await axios.post(`${process.env.NEXT_PUBLIC_BASE_URL || ''}/api/workout-chatbot`, {
+                message
+            });
+
+            const workoutPlan = workoutResponse.data.data;
+
+            // Update history with the new message and response
+            const updatedHistory = [
+                ...history,
+                { role: 'user', content: message },
+                { role: 'assistant', content: workoutPlan }
+            ];
+
+            return NextResponse.json({
+                data: workoutPlan,
+                history: updatedHistory
+            });
+        }
 
         // Initialize the model
         const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
@@ -59,4 +82,32 @@ Respond to the following message from the user: ${message}`;
             { status: 500 }
         );
     }
+}
+
+/**
+ * Determines if a user message is requesting a workout plan
+ */
+function isWorkoutRequest(message) {
+    const workoutKeywords = [
+        'workout plan',
+        'exercise plan',
+        'training program',
+        'workout routine',
+        'exercise routine',
+        'workout regimen',
+        'how to workout',
+        'exercises for',
+        'training for',
+        'workout schedule',
+        'fitness routine',
+        'weight training',
+        'build muscle',
+        'get stronger',
+        'tone muscles'
+    ];
+
+    const messageLower = message.toLowerCase();
+
+    // Check for workout keywords
+    return workoutKeywords.some(keyword => messageLower.includes(keyword));
 } 

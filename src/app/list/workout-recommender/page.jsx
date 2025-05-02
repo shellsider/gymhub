@@ -17,39 +17,13 @@ export default function WorkoutRecommenderPage() {
     setWorkoutPlan("");
 
     try {
-      // Build a prompt for Gemini, referencing the user's choices
-      const prompt = `
-            I want you to create a detailed workout plan with the following details:
+      // Call the new API endpoint that includes YouTube videos
+      const response = await axios.post("/api/workout-with-videos", {
+        formData,
+      });
 
-            - Body parts: ${formData.selectedBodyParts.join(", ")}
-            - Number of Exercises: ${formData.numExercises}
-            - Sets per Exercise: ${formData.setsPerExercise}
-            - Fitness Goal: ${formData.fitnessGoal}
-            - Experience Level: ${formData.experience}
-            - Available Equipment: ${formData.equipment}
-            - Workout Duration: ${formData.duration} minutes
-            - Rest Time: ${formData.restTime}
-            - Training Style: ${formData.trainingStyle}
-            - Include Warm-Up & Cool Down: ${
-              formData.warmupCoolDown === "yes" ? "Yes" : "No"
-            }
-            - Integrate Cardio: ${
-              formData.cardioIntegration === "yes" ? "Yes" : "No"
-            }
-
-            For each exercise:
-            1. Explain proper form & step-by-step process.
-            2. List common mistakes people make.
-            3. Mention the target muscles.
-
-            Format your response in Markdown with headings, bullet points, line breaks, etc. and include line breaks
-            - for every new exercise underline it as i am using react markdown, give the prompt in order to which it utilises react-markdown to proerly display the reverted text
-              `;
-
-      // Call your Next.js API route
-      const response = await axios.post("/api/gemini", { prompt });
-      // The AI response is in response.data.data
-      setWorkoutPlan(response.data.data || "No response from Gemini AI.");
+      // The AI response with YouTube videos is in response.data.data
+      setWorkoutPlan(response.data.data || "No response from AI.");
     } catch (error) {
       console.error("Error generating workout plan:", error);
       setWorkoutPlan("An error occurred while fetching the workout plan.");
