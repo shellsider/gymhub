@@ -3,8 +3,7 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 import axios from "axios";
 
 const genAI = new GoogleGenerativeAI('AIzaSyBCns8R8uqCoXfaD4ejT7ClWc9qDOFQ0jo');
-const GOOGLE_SEARCH_API_KEY = 'AIzaSyDiVxLSefklYp4Q3o100OSS1XoWoFATrvk';
-const GOOGLE_SEARCH_ENGINE_ID = '87ef85f09bd824836';
+const PIXABAY_API_KEY = '50072092-fc85aaf3b12fbda0b11769d6d';
 
 /**
  * POST /api/diet-with-images
@@ -16,20 +15,17 @@ export async function POST(req) {
     try {
         const { formData } = await req.json();
 
-        // 1. Get diet plan from Gemini
-        const dietPlan = await getDietPlanFromGemini(formData);
+        // 1. Get diet plan and dish array from Gemini
+        const { dietPlan, dishArray } = await getDietPlanFromGemini(formData);
 
-        // 2. Extract dishes from the diet plan
-        const dishes = extractDishesFromPlan(dietPlan);
+        console.log("Received dish array:", dishArray);
 
-        console.log("Extracted dishes:", dishes);
-
-        // 3. Find images for each dish
-        const dishesWithImages = await findImagesForDishes(dishes);
+        // 2. Find images for each dish using Pixabay API
+        const dishesWithImages = await findImagesForDishesPixabay(dishArray);
 
         console.log("Found images for dishes:", dishesWithImages.map(d => d.name));
 
-        // 4. Enhance the diet plan with dish images
+        // 3. Enhance the diet plan with dish images
         const enhancedDietPlan = enhanceDietPlanWithImages(dietPlan, dishesWithImages);
 
         return NextResponse.json({ data: enhancedDietPlan });
@@ -44,6 +40,7 @@ export async function POST(req) {
 
 /**
  * Gets a diet plan from Gemini based on form data
+ * Returns both the diet plan and the array of dishes
  */
 async function getDietPlanFromGemini(formData) {
     // Build a prompt for Gemini, referencing the user's choices
@@ -66,6 +63,7 @@ async function getDietPlanFromGemini(formData) {
     6. List ingredients for each dish
     7. Provide 7 days of meal plans with specific dishes for each day
     8. Include section headings for each day (# Day 1, # Day 2, etc.)
+    9. Return an array of the dishes like ['Tofu Scramble with Spinach and Whole-Wheat Toast', 'Lentil Soup with a Side Salad'] etc (this is an example)
     `;
 
     // Initialize the model
@@ -76,7 +74,58 @@ async function getDietPlanFromGemini(formData) {
     const response = result.response;
     const text = response.text();
 
-    return text;
+    // Extract the dish array from the response
+    let dishArray = [];
+    try {
+        // Look for array notation in the response
+        const arrayMatch = text.match(/\[(.*?)\]/s);
+        if (arrayMatch && arrayMatch[1]) {
+            // Parse the array string into an actual array
+            const arrayString = arrayMatch[1];
+            // Split by commas and clean up each entry
+            dishArray = arrayString.split(',')
+                .map(item => {
+                    // Remove quotes, extra spaces, and other non-alphanumeric chars except spaces
+                    return item.replace(/['"]/g, '').trim();
+                })
+                .filter(item => item.length > 0); // Filter out empty entries
+        } else {
+            // Fallback: Extract dishes from markdown headings
+            dishArray = extractDishesFromPlan(text);
+        }
+    } catch (error) {
+        console.error("Error parsing dish array:", error);
+        // Fallback to extracting dishes from the content
+        dishArray = extractDishesFromPlan(text);
+    }
+
+    // Clean up the text
+    let cleanedText = text;
+
+    // Remove the array notation from the text
+    cleanedText = cleanedText.replace(/\[.*?\]/s, '');
+
+    // Remove programming statements like dishes.append() and print(dishes)
+    cleanedText = cleanedText.replace(/dishes\.append\(['"](.*?)['"].*?\)/g, '');
+    cleanedText = cleanedText.replace(/print\(dishes\)/g, '');
+
+    // Remove any other Python code patterns
+    cleanedText = cleanedText.replace(/for dish in dishes:.*$/gm, '');
+    cleanedText = cleanedText.replace(/^dishes\s*=\s*\[\]/gm, '');
+    cleanedText = cleanedText.replace(/^dishes\s*=\s*list\(\)/gm, '');
+
+    // Additional general cleanup for any code-like syntax
+    cleanedText = cleanedText.replace(/```python[\s\S]*?```/g, '');
+    cleanedText = cleanedText.replace(/```[\s\S]*?```/g, '');
+
+    // Trim extra whitespace caused by removals
+    cleanedText = cleanedText.replace(/\n{3,}/g, '\n\n');
+    cleanedText = cleanedText.trim();
+
+    return {
+        dietPlan: cleanedText,
+        dishArray: dishArray
+    };
 }
 
 /**
@@ -119,49 +168,74 @@ function extractDishesFromPlan(plan) {
 }
 
 /**
- * Finds images for each dish using Google Custom Search API
+ * Finds images for each dish using Pixabay API
  */
-async function findImagesForDishes(dishes) {
+async function findImagesForDishesPixabay(dishes) {
     const dishesWithImages = [];
 
     for (const dish of dishes) {
         try {
-            // Search for food images of the dish
-            const searchQuery = `${dish} food dish recipe`;
-            const response = await axios.get('https://www.googleapis.com/customsearch/v1', {
-                params: {
-                    key: GOOGLE_SEARCH_API_KEY,
-                    cx: GOOGLE_SEARCH_ENGINE_ID,
-                    q: searchQuery,
-                    searchType: 'image',
-                    imgSize: 'medium',
-                    imgType: 'photo',
-                    num: 1
-                }
-            });
+            // Skip empty dishes
+            if (!dish || dish.trim() === '') continue;
 
-            if (response.data.items && response.data.items.length > 0) {
-                const image = response.data.items[0];
+            console.log(`Searching for image for dish: ${dish}`);
 
-                dishesWithImages.push({
-                    name: dish,
-                    imageUrl: image.link,
-                    thumbnailUrl: image.image?.thumbnailLink || image.link,
-                    width: image.image?.width || 300,
-                    height: image.image?.height || 200,
-                    title: image.title || dish,
-                    source: image.displayLink || 'Image Source'
+            // Try multiple query variations
+            const queryVariations = [
+                dish.replace(/\s+/g, '+'),                  // Exact dish name
+                `${dish.replace(/\s+/g, '+')}+food`,       // Dish name + food
+                dish.split(' ').slice(0, 3).join('+'),      // First 3 words only
+                dish.split(' ')[0] + '+dish'                // Just first word + dish
+            ];
+
+            let imageFound = false;
+
+            // Try each query variation until we find an image
+            for (const query of queryVariations) {
+                if (imageFound) break;
+
+                console.log(`Trying query: ${query}`);
+
+                // Search using current query variation
+                const response = await axios.get('https://pixabay.com/api/', {
+                    params: {
+                        key: PIXABAY_API_KEY,
+                        q: query,
+                        image_type: 'photo',
+                        per_page: 3
+                    }
                 });
-            } else {
-                // If no image found, add the dish without an image
+
+                if (response.data.hits && response.data.hits.length > 0) {
+                    const image = response.data.hits[0]; // Get the first result
+
+                    console.log(`Found image for "${dish}" using query "${query}"`);
+
+                    dishesWithImages.push({
+                        name: dish,
+                        imageUrl: image.webformatURL,
+                        thumbnailUrl: image.previewURL,
+                        width: image.webformatWidth,
+                        height: image.webformatHeight,
+                        title: `${dish} - Photo by ${image.user}`,
+                        source: `https://pixabay.com/users/${image.user}-${image.user_id}/`
+                    });
+
+                    imageFound = true;
+                }
+
+                // Add a small delay between queries to avoid rate limiting
+                await new Promise(resolve => setTimeout(resolve, 200));
+            }
+
+            // If no image found with any variation
+            if (!imageFound) {
+                console.log(`No image found for "${dish}" after trying all variations`);
                 dishesWithImages.push({
                     name: dish,
                     imageUrl: null
                 });
             }
-
-            // Add a small delay to avoid rate limiting
-            await new Promise(resolve => setTimeout(resolve, 200));
         } catch (error) {
             console.error(`Error fetching image for ${dish}:`, error);
             dishesWithImages.push({
@@ -181,22 +255,83 @@ async function findImagesForDishes(dishes) {
 function enhanceDietPlanWithImages(dietPlan, dishesWithImages) {
     let enhancedPlan = dietPlan;
 
+    // For each dish that has an image
     for (const dish of dishesWithImages) {
-        if (dish.imageUrl) {
-            // Create regex to match the dish heading
-            const dishRegex = new RegExp(`(###\\s+${escapeRegExp(dish.name)})`, 'g');
+        if (!dish.imageUrl) continue; // Skip dishes without images
 
-            // Add the image HTML after the dish heading
+        try {
+            // Escape special regex characters in dish name
+            const escapedDishName = escapeRegExp(dish.name);
+
+            // Create different regex patterns to match various heading formats
+            const dishRegexes = [
+                // Standard level 3 heading
+                new RegExp(`(###\\s+${escapedDishName})([\\s\\n])`, 'gi'),
+
+                // As part of a sentence
+                new RegExp(`([\\s\\n])(${escapedDishName})([\\s\\n.,])`, 'gi'),
+
+                // With parentheses (often for meal labels)
+                new RegExp(`(${escapedDishName}\\s*\\([^)]+\\))`, 'gi')
+            ];
+
+            // Add the markdown image right after the dish name
             const imageHtml = `
 $1
 
 ![${dish.name}](${dish.imageUrl})
-*${dish.title}*
-
+*Photo by ${dish.title.split(' - Photo by ')[1] || 'Pixabay'}*
 `;
 
-            // Replace in the plan
-            enhancedPlan = enhancedPlan.replace(dishRegex, imageHtml);
+            // Check each regex pattern to find matches
+            let matchFound = false;
+
+            for (const regex of dishRegexes) {
+                if (enhancedPlan.match(regex)) {
+                    console.log(`Found match for "${dish.name}" using regex pattern`);
+
+                    if (regex.toString().includes('###')) {
+                        // For headings, add image below
+                        enhancedPlan = enhancedPlan.replace(regex, imageHtml);
+                    } else {
+                        // For inline mentions, don't modify
+                        continue;
+                    }
+
+                    matchFound = true;
+                    break;
+                }
+            }
+
+            // If no matches found using regex patterns
+            if (!matchFound) {
+                console.log(`No exact match found for "${dish.name}", trying case-insensitive search`);
+
+                // Create a simple case-insensitive search
+                const lowerPlan = enhancedPlan.toLowerCase();
+                const lowerDishName = dish.name.toLowerCase();
+
+                if (lowerPlan.includes(lowerDishName)) {
+                    // Find the position to insert the image
+                    const headingRegex = new RegExp(`###[^#]*${escapedDishName}.*?\\n`, 'i');
+                    const headingMatch = enhancedPlan.match(headingRegex);
+
+                    if (headingMatch) {
+                        const index = enhancedPlan.indexOf(headingMatch[0]) + headingMatch[0].length;
+                        const beforeImage = enhancedPlan.substring(0, index);
+                        const afterImage = enhancedPlan.substring(index);
+
+                        // Insert the image at the appropriate position
+                        enhancedPlan = beforeImage +
+                            `\n![${dish.name}](${dish.imageUrl})\n*Photo by ${dish.title.split(' - Photo by ')[1] || 'Pixabay'}*\n\n` +
+                            afterImage;
+
+                        console.log(`Inserted image for "${dish.name}" using position-based approach`);
+                    }
+                }
+            }
+        } catch (error) {
+            console.error(`Error enhancing plan with image for ${dish.name}:`, error);
         }
     }
 

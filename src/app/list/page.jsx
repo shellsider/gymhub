@@ -112,27 +112,6 @@ const featuresData = [
       </svg>
     ),
   },
-  {
-    title: "Video Demonstrations",
-    description:
-      "Watch detailed exercise videos with muscle targeting and real-time form correction. Perfect your technique with visual guides and expert tips.",
-    link: "/list/#",
-    icon: (
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        className="h-12 w-12 text-red-600"
-        fill="none"
-        viewBox="0 0 24 24"
-        stroke="currentColor">
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth={2}
-          d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"
-        />
-      </svg>
-    ),
-  },
 ];
 
 export default function FeaturesPage() {
@@ -183,8 +162,23 @@ export default function FeaturesPage() {
       {/* Features Grid */}
       <section className="py-16 px-6 bg-white">
         <div className="max-w-7xl mx-auto">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {featuresData.map((feat, idx) => (
+          {/* First row with 3 cards */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+            {featuresData.slice(0, 3).map((feat, idx) => (
+              <div key={idx} className="flex flex-col">
+                <div className="mb-6 flex justify-center">{feat.icon}</div>
+                <Card
+                  title={feat.title}
+                  description={feat.description}
+                  link={feat.link}
+                />
+              </div>
+            ))}
+          </div>
+
+          {/* Second row with 2 cards centered - same size as top row */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+            {featuresData.slice(3, 5).map((feat, idx) => (
               <div key={idx} className="flex flex-col">
                 <div className="mb-6 flex justify-center">{feat.icon}</div>
                 <Card

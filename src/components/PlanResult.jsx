@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import ReactMarkdown from "react-markdown";
+import rehypeRaw from "rehype-raw";
 
 export default function PlanResult({ loading, plan }) {
   const [processedPlan, setProcessedPlan] = useState("");
@@ -66,6 +67,7 @@ export default function PlanResult({ loading, plan }) {
             <div className="overflow-x-auto max-w-full">
               {/* Render the plan as Markdown with custom styling */}
               <ReactMarkdown
+                rehypePlugins={[rehypeRaw]}
                 components={{
                   h1: ({ node, ...props }) => (
                     <h1
@@ -81,7 +83,7 @@ export default function PlanResult({ loading, plan }) {
                   ),
                   h3: ({ node, ...props }) => (
                     <h3
-                      className="text-lg font-semibold text-red-600 mt-4 mb-2 break-words"
+                      className="text-lg font-semibold text-red-600 mt-6 mb-3 pb-1 border-b border-gray-100 break-words"
                       {...props}
                     />
                   ),
@@ -155,7 +157,34 @@ export default function PlanResult({ loading, plan }) {
                     </a>
                   ),
                   em: ({ node, ...props }) => (
-                    <em className="text-gray-500 text-sm" {...props} />
+                    <em
+                      className="text-gray-500 text-sm block text-center mt-1 mb-3"
+                      {...props}
+                    />
+                  ),
+                  img: ({ node, ...props }) => (
+                    <div className="my-4 flex flex-col items-center">
+                      <img
+                        {...props}
+                        className="rounded-lg shadow-md max-w-full h-auto object-cover"
+                        style={{
+                          maxHeight: "250px",
+                          width: "auto",
+                          border: "1px solid #f0f0f0",
+                        }}
+                        loading="lazy"
+                        onError={(e) => {
+                          e.target.onerror = null;
+                          // Instead of using a placeholder image, hide the image and show a message
+                          e.target.style.display = "none";
+                          const errorMsg = document.createElement("p");
+                          errorMsg.textContent = "Image could not be loaded";
+                          errorMsg.className =
+                            "text-gray-500 text-sm italic mt-1";
+                          e.target.parentNode.appendChild(errorMsg);
+                        }}
+                      />
+                    </div>
                   ),
                 }}>
                 {processedPlan}

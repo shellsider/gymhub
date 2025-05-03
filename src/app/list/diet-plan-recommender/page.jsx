@@ -17,12 +17,17 @@ export default function DietPlanRecommender() {
     setPlan("");
 
     try {
-      // Call the new API endpoint that includes dish images
-      const response = await axios.post("/api/diet-with-images", {
+      // Choose API endpoint based on includeImages option
+      const endpoint = data.includeImages
+        ? "/api/diet-with-images"
+        : "/api/diet-plan";
+
+      // Call the appropriate API endpoint
+      const response = await axios.post(endpoint, {
         formData: data,
       });
 
-      // The enhanced diet plan with images is in response.data.data
+      // Set the plan from the response
       setPlan(response.data.data || "No response from AI.");
     } catch (error) {
       console.error("Error:", error);

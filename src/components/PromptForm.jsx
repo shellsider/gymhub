@@ -14,6 +14,7 @@ export default function PromptForm({ onGenerate }) {
   const [waterIntake, setWaterIntake] = useState("");
   const [allergies, setAllergies] = useState("");
   const [mealFrequency, setMealFrequency] = useState("3");
+  const [includeImages, setIncludeImages] = useState(true);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -34,6 +35,7 @@ export default function PromptForm({ onGenerate }) {
       waterIntake,
       allergies,
       mealFrequency,
+      includeImages,
     });
   };
 
@@ -217,6 +219,20 @@ export default function PromptForm({ onGenerate }) {
             <option value="3">3 Meals</option>
             <option value="5">5-6 Small Meals</option>
           </select>
+        </label>
+      </div>
+
+      <div className="mt-4">
+        <label className="flex items-center gap-2 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={includeImages}
+            onChange={(e) => setIncludeImages(e.target.checked)}
+            className="w-4 h-4 text-red-600 focus:ring-red-500 border-gray-300 rounded"
+          />
+          <span className="text-gray-700">
+            Include dish images in your plan
+          </span>
         </label>
       </div>
 
